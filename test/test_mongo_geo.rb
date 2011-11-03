@@ -8,6 +8,10 @@ class TestMongoGeo < Test::Unit::TestCase
       @asset3 = TestAsset.create(:coords => [70, 70])
     end
 
+    teardown do
+      TestAsset.collection.remove
+    end
+
     should "create the 2d index" do
       assert_equal(TestAsset.geo_key_name, :coords)
       assert(TestAsset.collection.index_information['coords_2d'], "geo_key did not define the 2d index")
@@ -45,16 +49,12 @@ class TestMongoGeo < Test::Unit::TestCase
       assert(@asset1.methods.collect{ |m| m.to_sym }.include?(:distance_from), "GeoSpatial::InstanceMethods were not included")
       assert_raise(ArgumentError) { @asset1.distance_from(51) }
       assert_equal(GeoKit::LatLng.distance_between([51, 51], @asset1.coords.to_a), @asset1.distance_from([51, 51]))
-
-      TestAsset.collection.remove
     end
 
     should "allow passing options to GeoKit with #distance_from" do
       geokit_result = GeoKit::LatLng.distance_between([51, 51], @asset1.coords.to_a, :sphere => true)
       geo_result    = @asset1.distance_from([51, 51], :sphere => true)
       assert_equal(geokit_result, geo_result)
-
-      TestAsset.collection.remove
     end
 
     should "find close objects with #neighbors" do
@@ -66,5 +66,33 @@ class TestMongoGeo < Test::Unit::TestCase
       neighbors = @asset1.neighbors(:limit => 1)
       assert_equal([@asset2], neighbors)
     end
+  end
+
+  context "using GeoKit::LatLng as key type" do
+    setup do
+      @asset1 = TestGeoKitAsset.create(:coords => GeoKit::LatLng.new(50, 50))
+      @asset2 = TestGeoKitAsset.create(:coords => GeoKit::LatLng.new(60, 60))
+      @asset3 = TestGeoKitAsset.create(:coords => GeoKit::LatLng.new(70, 70))
+    end
+
+    teardown do
+      TestGeoKitAsset.collection.remove
+    end
+
+    should "allow #near queries with LatLng" do
+      nearby = TestGeoKitAsset.near(GeoKit::LatLng.new(45, 45), :num => 2)
+      assert_equal(2, nearby.count)
+      assert_equal(@asset1.id.to_s, nearby.first.id.to_s)
+    end
+
+    should "allow using LatLng with #distance_from" do
+      assert_equal(GeoKit::LatLng.distance_between([51, 51], @asset1.coords), @asset1.distance_from(GeoKit::LatLng.new(51, 51)))
+    end
+
+    should "find close objects with #neighbors" do
+      neighbors = @asset1.neighbors
+      assert_equal([@asset2, @asset3], neighbors)
+    end
+
   end
 end

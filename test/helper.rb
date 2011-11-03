@@ -18,6 +18,13 @@ class TestAsset
   geo_key :coords, Array
 end
 
+class TestGeoKitAsset
+  include MongoMapper::Document
+  plugin GeoSpatial
+
+  geo_key :coords, GeoKit::LatLng
+end
+
 class Test::Unit::TestCase
   def setup
     DB['test_assets'].remove

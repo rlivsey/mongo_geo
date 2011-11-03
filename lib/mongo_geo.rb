@@ -39,7 +39,7 @@ module GeoSpatial
 
   module ClassMethods
     def geo_key(name, klass)
-      unless [Array, Hash].include?(klass)
+      unless [Array, Hash, GeoKit::LatLng].include?(klass)
         raise(ArgumentError, "#{klass} is not a valid type for a geo_key\nUse either an Array(recommended) or a Hash")
       end
 
@@ -61,7 +61,7 @@ module GeoSpatial
     def near(location, params = {})
       args = BSON::OrderedHash.new
       args[:geoNear] = self.collection.name
-      args[:near] = location
+      args[:near] = location.to_mongo
       params.each_pair{ |key, value| args[key.to_sym] = value }
 
       raw = database.command(args)
@@ -87,7 +87,7 @@ module GeoSpatial
     def distance_from(pt, options={})
       name = self.class.geo_key_name
       return nil if name.nil?
-      raise(ArgumentError) unless [Array, Hash].include?(pt.class)
+      raise(ArgumentError) unless [Array, Hash, GeoKit::LatLng].include?(pt.class)
 
       loc = self.send(name)
       loc = loc.values if loc.is_a?(Hash)
@@ -101,7 +101,7 @@ module GeoSpatial
       location = self.class.geo_key_name.to_sym
 
       self.class.name.constantize.where(
-        location.near => self.send(self.class.geo_key_name)
+        location.near => self.send(self.class.geo_key_name).to_mongo
       ).skip(opts[:skip]).limit(opts[:limit] + 1).to_a.reject { |n| n.id == self.id }
     end
   end
