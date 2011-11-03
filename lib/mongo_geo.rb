@@ -1,6 +1,25 @@
 require 'mongo_mapper'
 require 'geokit'
 
+module GeoKit
+  class LatLng
+    def self.to_mongo(val)
+      val ? val.to_a : []
+    end
+
+    def self.from_mongo(val)
+      case val
+      when GeoKit::LatLng
+        val
+      when Array
+        GeoKit::LatLng.new(val[0], val[1])
+      when nil
+        GeoKit::LatLng.new
+      end
+    end
+  end
+end
+
 module Plucky
   module Extensions
     module Symbol
