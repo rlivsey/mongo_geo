@@ -89,4 +89,4 @@ module GeoSpatial
   end
 end
 
-MongoMapper::Plugins.send :include, GeoSpatial
+MongoMapper::Document.plugin(GeoSpatial)
