@@ -3,8 +3,18 @@ require 'geokit'
 
 module GeoKit
   class LatLng
+    # mongo stores as [x, y] which corresponds to [lon, lat]
+    # so we have to make sure we reverse the order unless an array is passed
+    # to prevent swapping back and forth
     def self.to_mongo(val)
-      val ? val.to_a : []
+      case val
+      when GeoKit::LatLng
+        val.to_a.reverse
+      when Array
+        val
+      when nil
+        []
+      end
     end
 
     def self.from_mongo(val)
@@ -12,7 +22,7 @@ module GeoKit
       when GeoKit::LatLng
         val
       when Array
-        GeoKit::LatLng.new(val[0], val[1])
+        GeoKit::LatLng.new(val[1], val[0])
       when nil
         GeoKit::LatLng.new
       end
