@@ -15,12 +15,14 @@ module Plucky
 end
 
 module GeoSpatial
+  extend ActiveSupport::Concern
+
   module ClassMethods
     def geo_key(name, klass)
       unless [Array, Hash].include?(klass)
         raise(ArgumentError, "#{klass} is not a valid type for a geo_key\nUse either an Array(recommended) or a Hash")
       end
-      
+
       if @geo_key_name.nil?
         key name.to_sym, klass
         ensure_index([[name, Mongo::GEO2D]])
