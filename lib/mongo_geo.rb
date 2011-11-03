@@ -1,4 +1,5 @@
 require 'mongo_mapper'
+require 'geokit'
 
 module Plucky
   module Extensions
@@ -64,18 +65,16 @@ module GeoSpatial
   end
 
   module InstanceMethods
-    def distance_from(pt)
+    def distance_from(pt, options={})
       name = self.class.geo_key_name
       return nil if name.nil?
       raise(ArgumentError) unless [Array, Hash].include?(pt.class)
 
       loc = self.send(name)
       loc = loc.values if loc.is_a?(Hash)
-      pt = pt.values if pt.is_a?(Hash)
+      pt  = pt.values  if pt.is_a?(Hash)
 
-      dx = loc[0] - pt[0]
-      dy = loc[1] - pt[1]
-      Math.sqrt((dx ** 2) + (dy ** 2))
+      GeoKit::LatLng.distance_between(loc, pt, options)
     end
 
     def neighbors(opts = {})
